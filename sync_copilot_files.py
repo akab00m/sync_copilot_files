@@ -6,37 +6,55 @@ VS Code автоматически подхватит их через настр
 
 import os
 from pathlib import Path
+from typing import Any
 
 import requests
 
+# ============================================================================
+# НАСТРОЙКА ВЕРСИИ VS CODE
+# ============================================================================
+# Раскомментируйте нужную версию:
+
+# VS Code Insiders (используется по умолчанию)
+VSCODE_VERSION = "Code - Insiders"
+
+# VS Code Stable (стабильная версия)
+# VSCODE_VERSION = "Code"
+# ============================================================================
+
 
 def get_github_files() -> list[str]:
-    """Fetch the list of .instructions.md files from the GitHub repository."""
+    """Получение списка .instructions.md файлов из GitHub репозитория.
+
+    Returns:
+        Список имён файлов инструкций с расширением .instructions.md
+    """
     url = "https://api.github.com/repos/github/awesome-copilot/contents/instructions"
     response = requests.get(url, timeout=30)
 
     if response.status_code != 200:
         print(
-            f"Error: Could not fetch files from GitHub. Status code: {response.status_code}"
+            f"Ошибка: Не удалось получить файлы с GitHub. Код: {response.status_code}"
         )
         return []
 
-    files = []
-    for item in response.json():
-        if item["name"].endswith(".instructions.md"):
+    files: list[str] = []
+    data: Any = response.json()  # GitHub API возвращает список словарей
+    for item in data:
+        if isinstance(item, dict) and item.get("name", "").endswith(".instructions.md"):
             files.append(item["name"])
 
     return files
 
 
 def get_local_files(instructions_dir: str) -> list[str]:
-    """Get the list of .instructions.md files from the local instructions directory.
+    """Получение списка .instructions.md файлов из локальной директории.
 
     Args:
-        instructions_dir: Path to the instructions directory.
+        instructions_dir: Путь к директории с инструкциями
 
     Returns:
-        List of .instructions.md file names.
+        Список имён файлов с расширением .instructions.md
     """
     if not os.path.exists(instructions_dir):
         return []
@@ -50,7 +68,16 @@ def get_local_files(instructions_dir: str) -> list[str]:
 
 
 def download_file(file_name: str, download_url: str, save_path: str) -> bool:
-    """Download a file from GitHub and save it locally."""
+    """Загрузка файла с GitHub и сохранение локально.
+
+    Args:
+        file_name: Имя файла для отображения в логах
+        download_url: URL для загрузки файла
+        save_path: Путь для сохранения файла
+
+    Returns:
+        True если загрузка успешна, False в случае ошибки
+    """
     try:
         response = requests.get(download_url, timeout=30)
         response.raise_for_status()
@@ -58,10 +85,10 @@ def download_file(file_name: str, download_url: str, save_path: str) -> bool:
         with open(save_path, "w", encoding="utf-8") as f:
             f.write(response.text)
 
-        print(f"Downloaded: {file_name}")
+        print(f"Загружено: {file_name}")
         return True
     except Exception as e:
-        print(f"Error downloading {file_name}: {str(e)}")
+        print(f"Ошибка загрузки {file_name}: {e!s}")
         return False
 
 
@@ -131,18 +158,19 @@ def sync_copilot_files(prompts_dir: str) -> None:
 
 
 if __name__ == "__main__":
-    # Используем %APPDATA% для универсальности
+    # Используем %APPDATA% для кросс-платформенности Windows
     appdata = os.environ.get("APPDATA")
     if not appdata:
-        raise ValueError("APPDATA environment variable is not set")
+        raise ValueError("Переменная окружения APPDATA не установлена")
 
-    # Папка prompts для VS Code Insiders (как было изначально)
-    prompts_dir = os.path.join(appdata, r"Code - Insiders\User\prompts")
+    # Формируем путь к папке prompts для выбранной версии VS Code
+    prompts_dir = os.path.join(appdata, VSCODE_VERSION, "User", "prompts")
 
     print("=" * 70)
     print("Синхронизация инструкций GitHub Copilot")
     print("=" * 70)
-    print(f"\nЦелевая директория: {prompts_dir}")
+    print(f"Версия VS Code: {VSCODE_VERSION}")
+    print(f"Целевая директория: {prompts_dir}")
     print("Режим: Обновление только существующих файлов")
     print()
 

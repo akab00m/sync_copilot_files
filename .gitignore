@@ -118,6 +118,23 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Ruff cache
+.ruff_cache/
+
+# Pylint
+.pylint.d/
+
+# Bandit
+.bandit
+
+# Pytest
+.pytest_cache/
+
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+
 # IDE
 .vscode/
 .idea/
